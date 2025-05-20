@@ -1,0 +1,153 @@
+import stdio;
+import math;  // imports dump their symbols to global namespace
+
+// this is intended to be a low level language comparable with C or Pascal but with a more minimal syntax and some modern features
+
+// @todo decide on how module declaration is done (by filename, explicit declaration ...)
+// @todo a way to define things as filescoped (they should be exported by default i think)
+
+// there is no planned support for oop kind of features like methods or inheritance
+
+// @todo default arguments and struct initializers
+
+// functions that take no arguments does not require parenthesis
+proc main {
+    print("hello everyone\n");
+
+    var inferred := 20;
+
+    // semicolons are forced
+
+    var a : int = 10;
+    var i : int = 10;
+    var f : float = 2;
+    var s : string = "hi";
+    var dynamic_array : int[];
+    // @todo decide on a syntax for slices
+
+    var fixed_size_array : int[10];
+
+    var c : complex;  // from math
+    var new_v : c;
+
+    // iteration
+    for int i = 0; i < 10; i = i + 1 {
+    	print("I'm in a loop");
+	print_int(i);
+	print("\n");
+    }
+
+    // @todo will for be the only loop construct we have?
+
+    // ananymous procedure
+    var ten_times : (float) float = (input : float) float {
+        return 10 * input;
+    }
+    // var ten_times := (input : float) float { return 10 * input; };
+
+    a = ten_times(10);
+    if a == 100 {
+        print("works correctly\n");
+    } else {
+        print("there is a bug\n");
+    }
+
+    var value = do_pointer(10);
+
+    if value != 10 {
+        print("something has gone wrong");
+    }
+
+    proc inside_another_proc(input : int) {
+        return input * 20;
+    }
+
+    print_int(inside_another_proc(20));  // 400
+}
+
+
+// comment
+/*
+    multiline
+    /* nested multiline */
+*/
+
+struct Structure {
+    field : int,
+    name : string,
+    value : float
+
+    // no sort of method declaration is planned to be added you do it C style if you need them
+}
+
+enum MyEnum {  // enums are strongly typed
+     Apple, Banana, Strawberry
+}
+
+proc do_pointer(a : int) int {
+    // `,` means both pointer and address of
+    // `.` means dereference
+    var ptr : ,int = ,a;
+
+    var a_copy = .ptr;
+    return a_copy;
+}
+
+// parameters seperated by `;` pascal style
+// parameters are passed by value always, if you need references pass pointers
+proc muliple_params(a : int; b : float) int {
+    return a + b;
+}
+
+// you can name your return values and 'return' them without a return statement by assigning values to the return name again inspired by pascal
+proc named_return_value() name : int {
+    name = 1;  // the named return values can be assigned intermediate values and used in other computations
+    var a : int = name + 1;
+    if a == 2 {
+        print("heyyyyy\n");
+    }
+
+    name = 10;
+}
+
+// support for multiple return values
+proc multiple_returns(a : float; b : float) result : float, success : bool {
+    var res = (a + b) * b;
+    var is_zero : bool = true;
+    if res {  // float auto cast to bool
+        is_zero = false;
+    }
+
+    result = res;
+    success = !is_zero;
+}
+
+// takes no arguments and returns an int
+proc procedure() int {
+    return 1;
+}
+
+// takes n of type int as argument and returns int
+proc factorial(n : int) int {
+    if n == 1 return 1;
+    return factorial(n - 1) * n;
+}
+
+struct Vector2 {
+    x float,
+    y float
+}
+
+proc add_vector2(u : Vector2; v : Vector2) Vector2 {
+    return Vector2 {u.x + v.x, u.y + v.y};  // struct literal
+}
+
+// not sure about the syntax for constants here
+const wordsize := size_of(,int);  // pointer size
+
+// bitwise
+proc next_multiple_of_wordsize(a : int) int {
+     return ((n-1)|(wordsize-1)) + 1;
+}
+
+// TODO more bitwise examples

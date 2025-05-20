@@ -1,0 +1,13 @@
+proc main {
+
+    var a : int = 10 * 10;
+    var b : float = 3.3;
+
+    var k : int = 10 * (11-1);
+    var c : float = 20*(1.2);
+    var d : int = 12*(1+5);
+    
+    var t : bool = true;
+    var f : bool = false;
+    var n : bool = t and f;
+}

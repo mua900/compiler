@@ -1,0 +1,8 @@
+
+proc main() int {
+    proc test {
+        
+    }
+
+    return 0;
+}

@@ -1,0 +1,20 @@
+proc print(s : string) {
+}
+
+proc no_param {
+    print("hi");
+}
+
+proc say_hello() {
+    print("hello");
+}
+
+proc with_param(a : int) {
+    print("with param");
+}
+
+proc multi_param(a : int, b : int) {
+    print("multiple parameters");
+}
+
+// @todo return values

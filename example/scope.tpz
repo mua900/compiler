@@ -1,0 +1,26 @@
+// every scope gets its own namespace in which variables and procedures (and eventually structures) go into seperate namespaces
+proc main {
+    b(10, 2.3);  // should refer to the b declared way below
+}
+
+proc a {
+    var b : int = 10;  // variables and procedures are in different namespaces
+
+    proc b {
+        var b : int = 10;
+
+        var t : float = 0.0;
+    }
+
+
+    var t : float = 1.2;
+    {
+        var t : int = 2;  // shadowing
+    }
+
+    b();  // should refer to the b declared inside this procedure body
+}
+
+proc b(a : int, b : int) int {
+    return 2 * a + b;
+}

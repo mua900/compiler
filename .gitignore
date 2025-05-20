@@ -1,0 +1,15 @@
+.hg/
+.hgignore
+.cmake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compiler
+util/
+mypy_cache
+test/
+TODO
+GRAMMAR
+c_output/
+output

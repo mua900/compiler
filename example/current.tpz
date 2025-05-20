@@ -1,0 +1,16 @@
+// comment
+
+import module;  // importing is not implemented yet doesn't do anything
+import another_module;
+
+proc print() {
+    
+}
+
+proc main () {
+    
+}
+
+proc hello () {
+    print("hi");
+}
