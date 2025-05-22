@@ -110,23 +110,16 @@ void print_stmt(Stmt* s) {
             print_expr(expr_stmt->expr);
             break;
         }
+        case StmtKind::RETURN: {
+            auto ret_s = static_cast<Return_Stmt*>(s);
+            printf("Return statement\n");
+            for (auto ret : ret_s->returns) {
+                print_expr(ret);
+            }
+            break;
+        }
         default: panic_and_abort("INTERNAL Unhandled case in statement printer");
     }
 
     sb.free();
-}
-
-const char* stmt_name(Stmt* s) {
-    switch (s->kind) {
-        case StmtKind::DECL_VAR: return "STMT_DECL_VAR";
-        case StmtKind::DECL_PROC: return "STMT_DECL_PROC";
-        case StmtKind::IF: return "STMT_IF";
-        case StmtKind::FOR: return "STMT_FOR";
-        case StmtKind::ASSIGN: return "STMT_ASSIGN";
-        case StmtKind::BLOCK: return "STMT_BLOCK";
-        case StmtKind::EXPRESSION: return "STMT_EXPRESSION";
-        /*RETURN*/
-    }
-
-    return "<UNKNOWN STATEMENT>";
 }

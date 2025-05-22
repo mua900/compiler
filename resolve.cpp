@@ -59,7 +59,7 @@ void Resolver::collect_declaration(Stmt* stmt) {
 
       proc.parameters = ArrayView<Variable>(parameters.data, parameters.size);
 
-      proc.is_nested = enclosing == 0;
+      proc.is_nested = enclosing > 1;
 
       current_environment = enclosing;
 
@@ -167,8 +167,10 @@ void Resolver::resolve_reference(Stmt* stmt) {
       break;
     }
     case StmtKind::RETURN: {
-      auto ret = static_cast<Return_Stmt*>(stmt);
-      resolve_expression(ret->return_expr, scope);
+      auto return_s = static_cast<Return_Stmt*>(stmt);
+      for (auto ret : return_s->returns) {
+        resolve_expression(ret, scope);
+      }
       break;
     }
     default:
@@ -223,32 +225,43 @@ bool Resolver::resolve_expression(Expr* expr, const Environment*  scope) {
     case ExprType::CALL: {
       auto call = static_cast<Call_Expr*>(expr);
 
-      // continue until we find the procedure name and check it otherwise do nothing
-      if (call->expression->type == ExprType::VARIABLE) {
-        auto proc_name = static_cast<Variable_Expr*>(call->expression);
-        const Procedure* proc = NULL;
-        auto search = scope;
-        while (search != NULL) {
-          proc = search->get_procedure(proc_name->identifier.lexeme);
-          if (proc)
-            break;
+      auto call_expr = call;
+      bool found = false;
+      while (call_expr->expression && !found) {
+        auto expr = call_expr->expression;
+        if (expr->type == ExprType::VARIABLE) {
+          found = true;
 
-          if (search->parent_index == -1)  // global
-            break;
-          search = environments.get_ref(search->parent_index);
+          auto proc_name = static_cast <Variable_Expr*> (expr);
+          const Procedure* proc = NULL;
+          auto search = scope;
+          while (search != NULL) {
+            proc = search->get_procedure(proc_name->identifier.lexeme);
+            if (proc) {
+              break;
+            }
+
+            if (search->parent_index == -1) { // global
+              break;
+            }
+            search = environments.get_ref(search->parent_index);
+          }
+
+          if (!proc) {
+            String_Builder* scratch = scratch_string_builder();
+            scratch->clear_and_append(proc_name->identifier.lexeme);
+            errorf(proc_name->identifier.line, "Use of undeclared procedure %s", scratch->c_string());
+            return false;
+          }
+
+          call_expr->proc_id = proc->proc_id;
+        } else if (expr->type == ExprType::CALL) {
+          call_expr = static_cast <Call_Expr*> (expr);
+        } else {
+          panic_and_abort("INTERNAL Expression chain in call expression should only contain call expressions or procedure names");
         }
-
-        if (!proc) {
-          char buff[512];
-          null_terminate(proc_name->identifier.lexeme, buff);
-          errorf(proc_name->identifier.line, "Use of undeclared procedure %s", buff);
-          return false;
-        }
-
-        call->proc_id = proc->proc_id;
-      } else {
-        resolve_expression(call->expression, scope);
       }
+
       break;
     }
     case ExprType::MEMBER: {
@@ -271,9 +284,8 @@ void Resolver::dump_environments() {
 
   for (int index = 1; index < environments.size; index++) {
     auto env = environments.data[index];
-    auto parent_index = env.parent_index;// (int)(((uintptr_t)env.parent - (uintptr_t)environments.data) / sizeof(uintptr_t));
-    printf("%s environment, child of %s\n", ordinal_string(index), ordinal_string(parent_index));
+    auto parent_index = env.parent_index;
+    printf("%s environment, child of %s\n", ordinal_string(index), ordinal_string(parent_index));  // debug
     env.dump();
-    index++;
   }
 }

@@ -40,6 +40,14 @@ void panic_and_abort(char const * const message) {
   panic_and_abort(formatted_msg);
 }
 
+static String_Builder scratch;
+String_Builder* scratch_string_builder() {
+  if (scratch.buffer == NULL)
+    scratch = String_Builder(512);
+
+  return &scratch;
+}
+
 size_t string_length(char const * s) {
   size_t len = 0;
   while (*s) {

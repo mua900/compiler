@@ -7,9 +7,9 @@
 
 // @todo
 void semantic_analysis(ArrayView<Stmt*> program, ArrayView<Environment> declarations) {
+
     for (int i = 0; i < program.count; i++) {
         auto stmt = program.get(i);
-
         auto scope = stmt->scope;
 
         switch (stmt->kind) {

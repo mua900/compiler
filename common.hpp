@@ -120,9 +120,10 @@ void null_terminate(String string, char* buffer);
 
 struct String_Builder {
   char* buffer = NULL;
-  size_t buffer_capacity;
+  size_t buffer_capacity = 0;
   size_t cursor = 0;
 
+  String_Builder() = default;
   String_Builder(size_t initial_size) {
     buffer = new char[initial_size];
     buffer_capacity = initial_size;
@@ -198,6 +199,9 @@ struct String_Builder {
     cursor += s.size;
   }
 
+  // @todo custom format
+  // void append_custom(const char* format, ...);
+
   void free() {
     delete[] buffer;
   }
@@ -208,6 +212,7 @@ struct String_Builder {
   }
 };
 
+String_Builder* scratch_string_builder();
 bool compare_string(String, String);
 
 String take_input();

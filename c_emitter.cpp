@@ -9,8 +9,6 @@ static void translate_statement(Stmt* statement, FILE* output, String_Builder* s
 static void dump_declarations(ArrayView<Environment> decls, FILE* output_file);
 
 void output_c_code(ArrayView<Stmt*> program, ArrayView<Environment> decls, FILE* output_file) {
-    // panic_and_abort("C output not implemented");
-
     auto output = output_file;
 
     String includes = String("#include <stdlib.h>\n#include <stdio.h>\n#include <string.h>\n");
@@ -36,13 +34,10 @@ static void dump_declarations(ArrayView<Environment> decls, FILE* output) {
   for (int i = 0; i < global->variables.size; i++) {
     auto symbol = global->variable_names.get(i);
     auto var = global->variables.get(i);
-
-    
   }
 
 
   for (int i = 0; i < decls.count; i++) {
-
   }
 }
 
@@ -148,8 +143,9 @@ static void translate_statement(Stmt* statement, FILE* output, String_Builder* s
     break;
   }
   case StmtKind::RETURN: {
+    panic_and_abort("C returns not implemented");
     auto ret_stmt = static_cast<Return_Stmt*>(statement);
-    expression_string(ret_stmt->return_expr, sb);
+    // expression_string(ret_stmt->return_expr, sb);
     fprintf(output, "return %s;\n", sb->c_string());
     break;
   }

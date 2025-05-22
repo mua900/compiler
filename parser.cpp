@@ -78,7 +78,10 @@ Stmt* Parser::parse_statement() {
             // @todo @fixme warn
             advance();
             return NULL;
-        default: {  // a non recognized token to start a statement
+        default: {
+            Expr_Stmt* expression_stmt = expr_stmt();
+            if (expression_stmt) return expression_stmt;
+
             error(tokens.get(current), "Expected statement");
             while (current < tokens.count) {
                 auto type = tokens.get(current).type;
@@ -154,7 +157,8 @@ For_Stmt* Parser::for_stmt() {
 }
 
 Stmt* Parser::parse_after_identifier() {
-    assert(tokens.get(current).type == TokenType::IDENTIFIER);
+    Token current_token = tokens.get(current);
+    assert(current_token.type == TokenType::IDENTIFIER);
 
     Token token = peek();
     switch (token.type) {
@@ -164,11 +168,23 @@ Stmt* Parser::parse_after_identifier() {
         case TokenType::PAREN_LEFT:  // function call
             return expr_stmt();  // @test
         default: {
-            char proc_name[1024];
-            null_terminate(token.lexeme, proc_name);
-            error_tokenf(token, "Expected either `.`, `(` or `=` after identifier for a valid statement but found %s instead", proc_name);
+            String_Builder sb(256);
+            sb.append("Expected either an assignment, member access or procedure call after identifier ");
+            sb.append(current_token.lexeme);
+            sb.append(" for a valid statement but found ");
+            sb.append(token.lexeme);
+            sb.append(" instead");
+            error_tokenf(token, sb.c_string());
 
             advance();
+            if (current + 1 >= tokens.count) return NULL;
+
+            auto next_token_type = peek().type;
+            if (token.type == TokenType::COLON && (next_token_type == TokenType::IDENTIFIER || is_basic_type(next_token_type))) {
+                report_info("Maybe this is intended to be a variable declaration but missing var keyword at the beginning (var a : int = 10;)");
+                advance(); advance();
+            }
+
             return NULL;
         }
     }
@@ -445,18 +461,35 @@ Import_Stmt* Parser::import_stmt() {
 }
 
 // return expr ; (; is optional)
+// return expr1, expr2 ... (;) (comma seperated multiple returns
 Return_Stmt* Parser::return_stmt() {
     advance();  // return
 
+    auto returns = DArray<Expr*>();
+
     Expr* expr = parse_expression();
-    if (tokens.get(current).type == TokenType::SEMICOLON)
-        advance();
     if (!expr) {
         skip_past(TokenType::SEMICOLON);
         return NULL;
     }
 
-    return new Return_Stmt(expr);
+    returns.add(expr);
+
+    while (tokens.get(current).type == TokenType::COMMA) {
+        advance();
+
+        expr = parse_expression();
+        if (!expr) {
+            skip_past(TokenType::SEMICOLON);
+            return NULL;
+        }
+        returns.add(expr);
+    }
+
+    if (tokens.get(current).type == TokenType::SEMICOLON)
+        advance();
+
+    return new Return_Stmt(returns);
 }
 
 // expressions
@@ -767,6 +800,18 @@ void Parser::advance() {
     current++;
 }
 
+bool Parser::error_if_match(const char* error, Array<TokenType> match_seq) {
+    if (tokens.count >= current + match_seq.size) return false;
+    for (int i = 0; i < match_seq.size; i++) {
+        if (tokens.get(current + i).type != match_seq.get(i)) {
+            return false;
+        }
+    }
+
+    parse_error(error);
+    return true;
+}
+
 Token Parser::peek() {
     if (current + 1 >= tokens.count) {
         printf("Peeking beyond the token stream\n");
@@ -805,8 +850,8 @@ void Parser::skip_past(TokenType type) {
     }
 }
 
-void print_ast(ArrayView<Stmt*> program, const char* name) {
-    printf("Ast of the program %s\n", name);
+void print_ast(ArrayView<Stmt*> program) {
+    printf("Ast of the program\n");
     printf("Program has %zu top level statements\n", program.count);
 
     for (auto s : program) {

@@ -135,7 +135,9 @@ struct Array {
   T* data = NULL;
   int size = 0;
 
-  T get(int index) { return data[index]; }
+  T get(int index) {
+    return data[index];
+  }
 
   Array() = default;
   Array(T* data, int size) : data(data), size(size) {}

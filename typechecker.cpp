@@ -61,18 +61,6 @@ const char* type_string(Type_ID type) {
     }
 }
 
-// @fixme
-DArray<Proc_Type> Proc_Types;
-Proc_Type get_proc_type(Type_ID type) {
-    if (!is_procedure_type(type)) {
-        panic_and_abort("INTERNAL Request for procedure type info with a non-proc type type id");
-    }
-
-    auto index = (uint64_t) type;
-    index &= ~Type_Type_Masks::TYPE_PROCEDURE;
-    return Proc_Types.get(index);
-}
-
 Type_ID Typechecker::typecheck_expr(Expr* expr) {
     // @fixme location info
     // @fixme better error messages
@@ -138,7 +126,6 @@ Type_ID Typechecker::typecheck_expr(Expr* expr) {
             Procedure called_proc;
 
             // the only way its an expression that evaluates to a procedure is that that expression to be a procedure that returns a procedure
-            // we don't have lambdas or something like that
 
             // we need the procedure name to get the procedure from the environment and we need to get some context
             DArray<Expr*> stack;
@@ -308,7 +295,9 @@ bool Typechecker::typecheck_statement(Stmt* stmt) {
         }
         case StmtKind::RETURN: {
             auto ret_stmt = static_cast<Return_Stmt*>(stmt);
-            typecheck_expr(ret_stmt->return_expr);
+            for (auto ret : ret_stmt->returns) {
+                typecheck_expr(ret);
+            }
 
             return true;
         }

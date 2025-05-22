@@ -8,9 +8,12 @@
 #include "environment.hpp"
 #include "type.hpp"
 
+// resolve names and build a dependency tree
 struct Resolver {
     DArray<Environment> environments;
     ArrayView<Stmt*> program;
+
+    // @todo dependency tree
 
     int current_environment = 0;
     //Environment* current_environment = NULL;

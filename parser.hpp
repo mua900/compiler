@@ -45,6 +45,7 @@ private:
   bool eat_token(TokenType, char const * const);
 
   void parse_error(char const * const, ...);
+  bool error_if_match(const char* error, Array<TokenType> match_seq);
 
   Stmt* statement();
   Block_Stmt* block_stmt();
@@ -72,4 +73,4 @@ private:
   Expr* primary_expr();
 };
 
-void print_ast(ArrayView<Stmt*>, const char*);
+void print_ast(ArrayView<Stmt*> program);

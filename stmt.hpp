@@ -88,10 +88,9 @@ struct Import_Stmt : Stmt {
 };
 
 struct Return_Stmt : Stmt {
-    Expr* return_expr;
+    DArray<Expr*> returns;
 
-    Return_Stmt(Expr* return_expr) : return_expr(return_expr) { kind = StmtKind::RETURN; }
+    Return_Stmt(DArray<Expr*> return_exprs) : returns(return_exprs) { kind = StmtKind::RETURN; }
 };
 
 void print_stmt(Stmt* s);
-const char* stmt_name(Stmt* s);

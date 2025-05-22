@@ -34,7 +34,6 @@ struct Options {
   bool print_ast = false;  // print the resulting ast
 
   bool test_bytecode = false;
-  bool test_typecheck = false;
   bool test_name_resolution = false;
 };
 
@@ -65,7 +64,6 @@ static int active_options(Options ops) {
   if (ops.parse_only) count++;
   if (ops.print_ast) count++;
   if (ops.test_bytecode) count++;
-  if (ops.test_typecheck) count++;
 
   return count;
 }
@@ -86,7 +84,6 @@ void print_configuration(Options ops, Context ctx) {
   if (ops.parse_only) printf("parse_only\n");
   if (ops.print_ast) printf("print_ast\n");
   if (ops.test_bytecode) printf("test_bytecode\n");
-  if (ops.test_typecheck) printf("test_typecheck\n");
   printf("\n");
 }
 
@@ -95,6 +92,7 @@ static bool command_line_argument(char* arg, Options* options);
 static DArray<char*> command_line_arguments(int arg_count, char** args, Options* options, Context* context);
 
 bool prompt_iteration(const Options* options, Context* context) {
+  // @todo more sophisticated repl, integrate with gnu readline maybe
   printf("> ");
   auto input = take_input();
   input.trim('\n');
@@ -150,47 +148,65 @@ void handle_file(char* path, Options* options, Context* context) {
   compile(String(content.data, content.size), options, context);
 }
 
-void compile(const String source, const Options* options, const Context* context) {
+ArrayView<Stmt*> frontend(bool *continue_compilation, String source, Options options, Context context) {
+  ArrayView<Stmt*> statements = ArrayView<Stmt*>(NULL, 0);
+
   bool error = false;
   ArrayView<Token> tokens = lex(source, &error);
-
-  if (options->dump_lexer_output) {
+  if (options.dump_lexer_output) {
     printf("Collected %zu tokens\n", tokens.count);
     for (const Token& token : tokens) {
       token.print();
     }
   }
 
-  if (error) return;  // if we encountered an error during lexing don't continue
-  if (options->lexer_only) return;
+  if (error) {
+    *continue_compilation = false;
+    return statements;
+  }
+  if (options.lexer_only) {
+    *continue_compilation = false;
+    return statements;
+  }
 
   Parser parser = Parser(tokens);
 
-  if (options->parse_expr) {
+  if (options.parse_expr) {
     Expr* expr = parser.parse_expression();
     print_expr(expr);
     printf("\n");
 
-    if (options->generate_dot_file) {
-      if (!expression_tree_to_dot(expr, context->dot_file_name)) {
+    if (options.generate_dot_file) {
+      if (!expression_tree_to_dot(expr, context.dot_file_name)) {
         printf("Failed to generate dot file\n");
       }
     }
 
-    return;
+    *continue_compilation = false;
+    return statements;
   }
 
-  ArrayView<Stmt*> statements = parser.parse(&error);
+  statements = parser.parse(&error);
+
+  if (options.print_ast) {
+    print_ast(statements);
+  }
+
   if (error) {
-    return;
+    *continue_compilation = false;
+    return statements;
+  }
+  if (options.parse_only) {
+    *continue_compilation = false;
+    return statements;
   }
 
-  if (options->print_ast) {
-    print_ast(statements, "program_name");
-  }
+  return statements;
+}
 
-  if (options->parse_only)
-    return;
+void compile(const String source, const Options* options, const Context* context) {
+  bool continue_compilation = true;
+  auto statements = frontend(&continue_compilation, source, *options, *context);
 
   Resolver resolver = Resolver(statements);
   ArrayView<Environment> declarations = resolver.resolve();
@@ -335,8 +351,6 @@ static DArray<char*> command_line_arguments(int arg_count, char** args, Options*
       options->parse_expr = true;
     } else if (compare_string(argument,   String("-test-bytecode"))) {
       options->test_bytecode = true;
-    } else if (compare_string(argument,   String("-test-typecheck"))) {
-      options->test_typecheck = true;
     } else if (compare_string(argument,   String("-parse-only"))) {
       options->parse_only = true;
     } else if (compare_string(argument,   String("-c-output"))) {
